@@ -5,8 +5,8 @@ import pandas as pd
 import uuid
 
 from datetime import datetime
-from scripts.common.config import FRED_API_KEY
-from scripts.common.db import get_connection
+from src.common.config import FRED_API_KEY
+from src.common.db import get_connection
 
 BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
@@ -96,7 +96,6 @@ def get_fred_data():
 
 def load_to_sql(df):
 
-    from scripts.common.db import get_connection
     import pandas as pd
 
     # ------------------------------------------------------------
