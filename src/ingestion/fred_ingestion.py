@@ -8,6 +8,12 @@ from datetime import datetime
 from src.common.config import FRED_API_KEY
 from src.common.db import get_connection
 
+from src.common.audit import (
+    start_pipeline_run,
+    complete_pipeline_run,
+    fail_pipeline_run
+)
+
 BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 SERIES = {
@@ -184,13 +190,37 @@ def load_to_sql(df):
 
 if __name__ == "__main__":
 
-    df = get_fred_data()
+    pipeline_run_id = str(uuid.uuid4())
 
-    print("\nPreview:")
-    print(df.head())
+    try:
 
-    print("\nRow Count:", len(df))
+        start_pipeline_run(
+            pipeline_run_id=pipeline_run_id,
+            pipeline_name="fred_ingestion",
+            source_name="FRED_API",
+            target_table="raw.raw_fred_data"
+        )
 
-    load_to_sql(df)
+        df = get_fred_data()
 
-    print("Loaded into SQL successfully")
+        rows_received = len(df)
+
+        load_to_sql(df)
+
+        complete_pipeline_run(
+            pipeline_run_id,
+            rows_received,
+            rows_received,
+            0
+        )
+
+        print("Pipeline completed successfully")
+
+    except Exception as e:
+
+        fail_pipeline_run(
+            pipeline_run_id,
+            str(e)
+        )
+
+        raise
