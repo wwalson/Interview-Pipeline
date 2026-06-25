@@ -14,6 +14,10 @@ from src.common.audit import (
     fail_pipeline_run
 )
 
+from src.common.stored_procedures import (
+    execute_fred_merge
+)
+
 BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 SERIES = {
@@ -23,9 +27,9 @@ SERIES = {
 }
 
 
-def get_fred_data():
+def get_fred_data(pipeline_run_id):
 
-    pipeline_run_id = str(uuid.uuid4())
+    
     batch_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     load_timestamp = datetime.now()
 
@@ -188,6 +192,10 @@ def load_to_sql(df):
     conn.commit()
     conn.close()
 
+    print(
+        f"Loaded {len(df)} rows into raw.raw_fred_data"
+    )
+
 if __name__ == "__main__":
 
     pipeline_run_id = str(uuid.uuid4())
@@ -201,11 +209,13 @@ if __name__ == "__main__":
             target_table="raw.raw_fred_data"
         )
 
-        df = get_fred_data()
+        df = get_fred_data(pipeline_run_id)
 
         rows_received = len(df)
 
         load_to_sql(df)
+
+        execute_fred_merge()
 
         complete_pipeline_run(
             pipeline_run_id,
